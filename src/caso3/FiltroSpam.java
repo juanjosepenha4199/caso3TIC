@@ -55,7 +55,7 @@ public class FiltroSpam extends Thread {
                                 coordinador.registrarStartDepositado(totalServidores);
                             }
                             if (faltan > 0) {
-                                System.out.println("  " + getName() + " → Deposita " + faltan + " mensaje(s) START en buzón de entrega (activando servidores)");
+                                System.out.println("  " + getName() + " Deposita " + faltan + " mensaje(s) START en buzon de entrega (activando servidores)");
                             }
                         }
                         break;
@@ -67,7 +67,7 @@ public class FiltroSpam extends Thread {
                         synchronized (coordinador) {
                             if (coordinador.condicionesParaFin(buzonEntrada, buzonCuarentena)
                                     && coordinador.debeDepositarEndEntrega()) {
-                                System.out.println("  " + getName() + " → Deposita mensaje END final en entrega y cuarentena (iniciando terminación)");
+                                System.out.println("  " + getName() + " Deposita mensaje END final en entrega y cuarentena (iniciando terminacion)");
                                 buzonEntrega.put(Mensaje.end());
                                 buzonCuarentena.put(Mensaje.end());
                                 return; // termina este filtro
@@ -86,7 +86,7 @@ public class FiltroSpam extends Thread {
                                     // Si las condiciones se cumplen, depositar END y terminar
                                     if (coordinador.condicionesParaFin(buzonEntrada, buzonCuarentena)
                                             && coordinador.debeDepositarEndEntrega()) {
-                                        System.out.println("  " + getName() + " → Deposita mensaje END final en entrega y cuarentena (iniciando terminación)");
+                                        System.out.println("  " + getName() + " Deposita mensaje END final en entrega y cuarentena (iniciando terminacion)");
                                         buzonEntrega.put(Mensaje.end());
                                         buzonCuarentena.put(Mensaje.end());
                                         return; // termina este filtro
@@ -114,10 +114,10 @@ public class FiltroSpam extends Thread {
             int tiempo = MIN_QUAR + rnd.nextInt(MAX_QUAR - MIN_QUAR + 1);
             m.setTiempoCuarentena(tiempo / 1000); // convertir a segundos
             buzonCuarentena.put(m);
-            System.out.println("  " + getName() + " → SPAM detectado → Cuarentena [" + m.getId() + "] (tiempo: " + m.getTiempoCuarentena() + "s)");
+            System.out.println("  " + getName() + " SPAM detectado -> Cuarentena [" + m.getId() + "] (tiempo: " + m.getTiempoCuarentena() + "s)");
         } else {
             buzonEntrega.put(m);
-            System.out.println("  " + getName() + " → Correo válido → Entrega [" + m.getId() + "]");
+            System.out.println("  " + getName() + " Correo valido -> Entrega [" + m.getId() + "]");
         }
     }
 }

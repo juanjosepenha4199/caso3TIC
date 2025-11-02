@@ -1,38 +1,63 @@
 package src.caso3;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 /**
  * Main.java
  * Clase principal que:
- * - Lee parámetros (aquí usamos valores hardcode para ejemplo; puedes leer de archivo).
+ * - Lee parámetros desde consola.
  * - Crea buzones, instancias y threads.
  * - Arranca y espera terminación.
- *
- * NOTA: Debes adaptar la lectura de archivo para cumplir con la especificación (archivo texto).
  */
 public class Main {
     public static void main(String[] args) throws InterruptedException {
-        // Ejemplo de configuración (cambiar por parseo de archivo)
+        Scanner scanner = new Scanner(System.in);
+        
+        // Leer configuración desde consola
+        System.out.println("========================================");
+        System.out.println("  CONFIGURACION DEL SISTEMA");
+        System.out.println("========================================");
+        
+        System.out.print("Numero de clientes: ");
+        int numClientes = scanner.nextInt();
+        
+        System.out.print("Mensajes por cliente: ");
+        int mensajesPorCliente = scanner.nextInt();
+        
+        System.out.print("Numero de filtros de spam: ");
+        int numFiltros = scanner.nextInt();
+        
+        System.out.print("Numero de servidores de entrega: ");
+        int numServidores = scanner.nextInt();
+        
+        System.out.print("Capacidad del buzon de entrada: ");
+        int capacidadBuzonEntrada = scanner.nextInt();
+        
+        System.out.print("Capacidad del buzon de entrega: ");
+        int capacidadBuzonEntrega = scanner.nextInt();
+        
+        scanner.close();
+        
         Configuracion cfg = new Configuracion(
-                3,      // numClientes
-                5,      // mensajesPorCliente
-                2,      // numFiltros
-                2,      // numServidores
-                5,      // capacidadBuzonEntrada
-                10      // capacidadBuzonEntrega
+                numClientes,
+                mensajesPorCliente,
+                numFiltros,
+                numServidores,
+                capacidadBuzonEntrada,
+                capacidadBuzonEntrega
         );
 
-        System.out.println("========================================");
+        System.out.println("\n========================================");
         System.out.println("  INICIANDO SISTEMA DE MENSAJERIA");
         System.out.println("========================================");
-        System.out.println("Configuración:");
+        System.out.println("Configuracion del sistema:");
         System.out.println("  - Clientes: " + cfg.numClientes);
         System.out.println("  - Mensajes por cliente: " + cfg.mensajesPorCliente);
         System.out.println("  - Filtros de spam: " + cfg.numFiltros);
         System.out.println("  - Servidores de entrega: " + cfg.numServidores);
-        System.out.println("  - Capacidad buzón entrada: " + cfg.capacidadBuzonEntrada);
-        System.out.println("  - Capacidad buzón entrega: " + cfg.capacidadBuzonEntrega);
+        System.out.println("  - Capacidad buzon entrada: " + cfg.capacidadBuzonEntrada);
+        System.out.println("  - Capacidad buzon entrega: " + cfg.capacidadBuzonEntrega);
         System.out.println("========================================\n");
 
         // buzones
@@ -111,11 +136,11 @@ public class Main {
         System.out.println("  RESUMEN FINAL DEL SISTEMA");
         System.out.println("========================================");
         System.out.println("Estado de los buzones:");
-        System.out.println("  - Buzón entrada: " + buzonEntrada.size() + " mensajes");
-        System.out.println("  - Buzón cuarentena: " + buzonCuarentena.size() + " mensajes");
-        System.out.println("  - Buzón entrega: " + buzonEntrega.size() + " mensajes");
+        System.out.println("  - Buzon entrada: " + buzonEntrada.size() + " mensajes");
+        System.out.println("  - Buzon cuarentena: " + buzonCuarentena.size() + " mensajes");
+        System.out.println("  - Buzon entrega: " + buzonEntrega.size() + " mensajes");
         System.out.println("========================================");
-        System.out.println("[OK] Simulacion finalizada correctamente.");
+        System.out.println("Proceso terminado exitosamente, vuelta pronto");
         System.out.println("========================================\n");
     }
 }

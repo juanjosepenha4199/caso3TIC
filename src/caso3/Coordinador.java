@@ -24,12 +24,12 @@ public class Coordinador {
 
     public synchronized void registrarStart() {
         starts++;
-        System.out.println("  [Coordinador] → START recibido (" + starts + "/" + totalClientes + " clientes)");
+        System.out.println("  [Coordinador] START recibido (" + starts + "/" + totalClientes + " clientes)");
     }
 
     public synchronized void registrarEnd() {
         ends++;
-        System.out.println("  [Coordinador] → END recibido (" + ends + "/" + totalClientes + " clientes)");
+        System.out.println("  [Coordinador] END recibido (" + ends + "/" + totalClientes + " clientes)");
     }
 
     public synchronized boolean todosEndsRecibidos() {

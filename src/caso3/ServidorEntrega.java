@@ -32,15 +32,15 @@ public class ServidorEntrega extends Thread {
 
                 if (m.getTipo() == Mensaje.Tipo.START) {
                     activo = true;
-                    System.out.println("  " + getName() + " → ACTIVADO (recibió START)");
+                    System.out.println("  " + getName() + " ACTIVADO (recibio START)");
                 } else if (m.getTipo() == Mensaje.Tipo.END) {
-                    System.out.println("  " + getName() + " → Terminando (recibió END)");
+                    System.out.println("  " + getName() + " Terminando (recibio END)");
                     break;
                 } else {
                     if (activo) {
                         procesarCorreo(m);
                     } else {
-                        System.out.println("  " + getName() + " → Ignora mensaje (aún no activado): [" + m.getId() + "]");
+                        System.out.println("  " + getName() + " Ignora mensaje (aun no activado): [" + m.getId() + "]");
                     }
                 }
             }
@@ -54,6 +54,6 @@ public class ServidorEntrega extends Thread {
         int tiempo = 100 + rnd.nextInt(400); // procesamiento entre 100–500ms
         Thread.sleep(tiempo);
         String origen = m.isFromCuarentena() ? " (de cuarentena)" : "";
-        System.out.println("  " + getName() + " → ENTREGADO [" + m.getId() + "]" + origen);
+        System.out.println("  " + getName() + " ENTREGADO [" + m.getId() + "]" + origen);
     }
 }
