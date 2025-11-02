@@ -23,6 +23,10 @@ public class ServidorEntrega extends Thread {
                 }
 
                 Mensaje m = buzonEntrega.take();
+                
+                if (m == null) {
+                    continue;
+                }
 
                 if (m.getTipo() == Mensaje.Tipo.START) {
                     activo = true;
