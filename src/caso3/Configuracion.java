@@ -1,8 +1,5 @@
 package src.caso3;
-/**
- * Configuracion.java
- * Clase simple para encapsular parámetros configurables del sistema.
- */
+
 public class Configuracion {
     public final int numClientes;
     public final int mensajesPorCliente;
@@ -23,7 +20,9 @@ public class Configuracion {
 
     @Override
     public String toString() {
-        return String.format("Config[clientes=%d msgs/cliente=%d filtros=%d servidores=%d capEntrada=%d capEntrega=%d]",
-                numClientes, mensajesPorCliente, numFiltros, numServidores, capacidadBuzonEntrada, capacidadBuzonEntrega);
+        return "Clientes: " + numClientes + ", Mensajes: " + mensajesPorCliente + 
+               ", Filtros: " + numFiltros + ", Servidores: " + numServidores +
+               ", Capacidad entrada: " + capacidadBuzonEntrada + 
+               ", Capacidad entrega: " + capacidadBuzonEntrega;
     }
 }
