@@ -78,20 +78,15 @@ public class Main {
         for (FiltroSpam f : filtros) f.join();
         System.out.println("[OK] Todos los filtros terminaron de procesar.");
 
-        synchronized (coordinador) {
-            if (!coordinador.todosEndsRecibidos()) {
-                try {
-                    buzonEntrega.put(Mensaje.end());
-                    buzonCuarentena.put(Mensaje.end());
-                } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-            }
-        }
-
         manejador.join();
         System.out.println("[OK] Manejador de cuarentena termino.");
 
+        System.out.println("[INFO] Enviando mensajes END a servidores...");
         for (int i = 0; i < numServidores; i++) {
-            buzonEntrega.put(Mensaje.end());
+            Mensaje endMsg = Mensaje.end();
+            while (!buzonEntrega.tryPut(endMsg)) {
+                Thread.sleep(50);
+            }
         }
 
         for (ServidorEntrega s : servidores) s.join();

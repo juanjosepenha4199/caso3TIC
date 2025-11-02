@@ -33,6 +33,17 @@ public class FiltroSpam extends Thread {
         try {
             while (true) {
                 Mensaje m = buzonEntrada.take();
+                
+                if (m == null) {
+                    if (coordinador.todosEndsRecibidos() && buzonEntrada.isEmpty()) {
+                        synchronized (coordinador) {
+                            if (coordinador.yaSeDepositoEnd()) {
+                                return;
+                            }
+                        }
+                    }
+                    continue;
+                }
 
                 switch (m.getTipo()) {
                     case START:
@@ -55,7 +66,7 @@ public class FiltroSpam extends Thread {
                     case END:
                         coordinador.registrarEnd();
                         synchronized (coordinador) {
-                            if (coordinador.condicionesParaFin(buzonEntrada, buzonCuarentena)
+                            if (coordinador.todosEndsRecibidos() && buzonEntrada.isEmpty()
                                     && coordinador.debeDepositarEndEntrega()) {
                                 System.out.println("  " + getName() + " Deposita mensaje END final en entrega y cuarentena (iniciando terminacion)");
                                 Mensaje endMsg = Mensaje.end();
@@ -66,20 +77,10 @@ public class FiltroSpam extends Thread {
                                 return;
                             }
                         }
-                        if (coordinador.todosEndsRecibidos()) {
+                        if (coordinador.todosEndsRecibidos() && buzonEntrada.isEmpty()) {
                             while (true) {
                                 synchronized (coordinador) {
                                     if (coordinador.yaSeDepositoEnd()) {
-                                        return;
-                                    }
-                                    if (coordinador.condicionesParaFin(buzonEntrada, buzonCuarentena)
-                                            && coordinador.debeDepositarEndEntrega()) {
-                                        System.out.println("  " + getName() + " Deposita mensaje END final en entrega y cuarentena (iniciando terminacion)");
-                                        Mensaje endMsg = Mensaje.end();
-                                        while (!buzonEntrega.tryPut(endMsg)) {
-                                            Thread.sleep(50);
-                                        }
-                                        buzonCuarentena.put(endMsg);
                                         return;
                                     }
                                 }

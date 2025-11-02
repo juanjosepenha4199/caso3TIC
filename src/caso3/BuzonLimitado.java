@@ -29,7 +29,10 @@ public class BuzonLimitado {
 
     public synchronized Mensaje take() throws InterruptedException {
         while (cola.isEmpty()) {
-            wait();
+            wait(1000);
+            if (cola.isEmpty()) {
+                return null;
+            }
         }
         Mensaje m = cola.poll();
         notifyAll();
