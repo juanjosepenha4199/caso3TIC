@@ -37,7 +37,7 @@ public class ManejadorCuarentena extends Thread {
                     if (m.getTipo() == Mensaje.Tipo.END) {
                         // remover y terminar
                         if (buzonCuarentena.remove(m)) {
-                            System.out.println(getName() + " procesó END de cuarentena y termina.");
+                            System.out.println("  " + getName() + " → Procesó END de cuarentena → Terminando");
                         }
                         running = false;
                         break;
@@ -56,7 +56,7 @@ public class ManejadorCuarentena extends Thread {
                                 buzonEntrega.put(m);
                             } else {
                                 // descartado
-                                System.out.println(getName() + " descartó (malicioso) mensaje " + m);
+                                System.out.println("  " + getName() + " → DESCARTADO (malicioso) [" + m.getId() + "]");
                             }
                         }
                     } else {
@@ -65,7 +65,7 @@ public class ManejadorCuarentena extends Thread {
                         if (descartar) {
                             boolean removed = buzonCuarentena.remove(m);
                             if (removed) {
-                                System.out.println(getName() + " descartó (aleatorio) mensaje " + m);
+                                System.out.println("  " + getName() + " → DESCARTADO (aleatorio) [" + m.getId() + "]");
                             }
                         }
                     }

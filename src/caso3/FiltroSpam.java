@@ -1,36 +1,23 @@
 package src.caso3;
+
 import java.util.Random;
 
 /**
  * FiltroSpam.java
  * Thread consumidor que toma mensajes del buzón de entrada (espera pasiva).
- *
- * Comportamiento:
- * - Consume mensaje por mensaje.
- * - START: incrementa contador local (o global) de clientes iniciados.
- * - END: cuenta los ends recibidos. Cuando se han recibido ends == numeroClientes,
- *   el filtro sabe que no se producirán más mensajes (pero debe ayudar a vaciar colas).
- * - NORMAL: si es spamFlag == true -> lo envía al buzón de cuarentena (semiactiva),
- *           y le asigna un tiempo aleatorio [10000,20000] ms (expresado en ticks de 1).
- *         si no es spam -> lo envía al buzón de entrega (semiactiva).
- *
- * Además:
- * - Cuando detecta que condiciones de terminación cumplen (entrada vacía, cuarentena vacía,
- *   y se han recibido todos los ENDs de clientes), un filtro depositará el mensaje END en
- *   el buzón de entrega y buzón de cuarentena según lo requiere el enunciado.
- *
- * Nota: para coordinación de finalización entre filtros (quién pone el END en entrega) se
- * usa un objeto monitor compartido (coordinador).
+ * Clasifica los correos como spam o válidos.
  */
 public class FiltroSpam extends Thread {
+
     private final BuzonLimitado buzonEntrada;
     private final BuzonCuarentena buzonCuarentena;
     private final BuzonLimitado buzonEntrega;
     private final int totalClientes;
-    private final Coordinador coordenador;
+    private final int totalServidores;
+    private final Coordinador coordinador;
     private final Random rnd = new Random();
 
-    // rango en ms para tiempo de cuarentena
+    // Rango para tiempo de cuarentena (en milisegundos)
     private static final int MIN_QUAR = 10000;
     private static final int MAX_QUAR = 20000;
 
@@ -39,13 +26,16 @@ public class FiltroSpam extends Thread {
                       BuzonCuarentena buzonCuarentena,
                       BuzonLimitado buzonEntrega,
                       int totalClientes,
-                      Coordinador coordenador) {
+                      int totalServidores,
+                      Coordinador coordinador) {
+
         setName("Filtro-" + name);
         this.buzonEntrada = buzonEntrada;
         this.buzonCuarentena = buzonCuarentena;
         this.buzonEntrega = buzonEntrega;
         this.totalClientes = totalClientes;
-        this.coordenador = coordenador;
+        this.totalServidores = totalServidores;
+        this.coordinador = coordinador;
     }
 
     @Override
@@ -53,37 +43,64 @@ public class FiltroSpam extends Thread {
         try {
             while (true) {
                 Mensaje m = buzonEntrada.take(); // espera pasiva
-                if (m.getTipo() == Mensaje.Tipo.START) {
-                    sincronizarStart();
-                    continue;
-                } else if (m.getTipo() == Mensaje.Tipo.END) {
-                    sincronizarEnd();
-                    // After registering END, continue - filters only finish when global conditions met
-                    if (coordenador.todosEndsRecibidos() && coordenador.condicionesParaFin(buzonEntrada, buzonCuarentena)) {
-                        // one filter must insert END in buzonEntrega and buzonCuarentena (spec says one deposits in entrega)
-                        if (coordenador.debeDepositarEndEntrega()) {
-                            // depositar END en buzonEntrega solo cuando entrada vacía y cuarentena vacía y no se generarán nuevos mensajes
-                            // but ensure delivery buzon has capacity: use put (may block)
-                            buzonEntrega.put(Mensaje.end());
-                            // Also deposit END in cuarentena so that manejador ends when processes it (spec asked also a FIN in cuarentena)
-                            buzonCuarentena.put(Mensaje.end());
-                            System.out.println(getName() + " depositó END en entrega y cuarentena.");
-                        }
-                        break; // finish this filter
-                    }
-                    continue;
-                }
 
-                // NORMAL message
-                if (m.isSpamFlag()) {
-                    // asignar tiempo aleatorio entre [10000,20000] ms
-                    int tiempo = MIN_QUAR + rnd.nextInt(MAX_QUAR - MIN_QUAR + 1);
-                    m.setTiempoCuarentena(tiempo / 1000); // guardamos en segundos para ticks del manejador
-                    // mark and put in cuarentena (semiactiva)
-                    buzonCuarentena.put(m);
-                } else {
-                    // mensaje válido => enviar al buzonEntrega (semiactiva)
-                    buzonEntrega.put(m);
+                switch (m.getTipo()) {
+                    case START:
+                        coordinador.registrarStart();
+                        // Depositar un START por cada servidor para activarlos
+                        synchronized (coordinador) {
+                            int faltan = coordinador.cuantosStartFaltan(totalServidores);
+                            for (int i = 0; i < faltan; i++) {
+                                buzonEntrega.put(Mensaje.start());
+                                coordinador.registrarStartDepositado(totalServidores);
+                            }
+                            if (faltan > 0) {
+                                System.out.println("  " + getName() + " → Deposita " + faltan + " mensaje(s) START en buzón de entrega (activando servidores)");
+                            }
+                        }
+                        break;
+
+                    case END:
+                        coordinador.registrarEnd();
+
+                        // Si todos los END fueron recibidos y no quedan mensajes
+                        synchronized (coordinador) {
+                            if (coordinador.condicionesParaFin(buzonEntrada, buzonCuarentena)
+                                    && coordinador.debeDepositarEndEntrega()) {
+                                System.out.println("  " + getName() + " → Deposita mensaje END final en entrega y cuarentena (iniciando terminación)");
+                                buzonEntrega.put(Mensaje.end());
+                                buzonCuarentena.put(Mensaje.end());
+                                return; // termina este filtro
+                            }
+                        }
+                        // Si recibimos todos los ENDs pero la cuarentena no está vacía,
+                        // continuar verificando periódicamente hasta que se pueda terminar
+                        if (coordinador.todosEndsRecibidos()) {
+                            // Verificar periódicamente si podemos terminar
+                            while (true) {
+                                synchronized (coordinador) {
+                                    // Si otro filtro ya depositó el END, este puede terminar
+                                    if (coordinador.yaSeDepositoEnd()) {
+                                        return; // termina este filtro
+                                    }
+                                    // Si las condiciones se cumplen, depositar END y terminar
+                                    if (coordinador.condicionesParaFin(buzonEntrada, buzonCuarentena)
+                                            && coordinador.debeDepositarEndEntrega()) {
+                                        System.out.println("  " + getName() + " → Deposita mensaje END final en entrega y cuarentena (iniciando terminación)");
+                                        buzonEntrega.put(Mensaje.end());
+                                        buzonCuarentena.put(Mensaje.end());
+                                        return; // termina este filtro
+                                    }
+                                }
+                                // Esperar un poco antes de verificar nuevamente
+                                Thread.sleep(100);
+                            }
+                        }
+                        break;
+
+                    case NORMAL:
+                        procesarMensajeNormal(m);
+                        break;
                 }
             }
         } catch (InterruptedException e) {
@@ -92,17 +109,15 @@ public class FiltroSpam extends Thread {
         }
     }
 
-    private void sincronizarStart() {
-        synchronized (coordenador) {
-            coordenador.registrarStart();
-            coordenador.notifyAll();
-        }
-    }
-
-    private void sincronizarEnd() {
-        synchronized (coordenador) {
-            coordenador.registrarEnd();
-            coordenador.notifyAll();
+    private void procesarMensajeNormal(Mensaje m) throws InterruptedException {
+        if (m.isSpamFlag()) {
+            int tiempo = MIN_QUAR + rnd.nextInt(MAX_QUAR - MIN_QUAR + 1);
+            m.setTiempoCuarentena(tiempo / 1000); // convertir a segundos
+            buzonCuarentena.put(m);
+            System.out.println("  " + getName() + " → SPAM detectado → Cuarentena [" + m.getId() + "] (tiempo: " + m.getTiempoCuarentena() + "s)");
+        } else {
+            buzonEntrega.put(m);
+            System.out.println("  " + getName() + " → Correo válido → Entrega [" + m.getId() + "]");
         }
     }
 }

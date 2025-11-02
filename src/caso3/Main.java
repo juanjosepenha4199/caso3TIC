@@ -23,7 +23,17 @@ public class Main {
                 10      // capacidadBuzonEntrega
         );
 
-        System.out.println("Iniciando sistema con: " + cfg);
+        System.out.println("========================================");
+        System.out.println("  INICIANDO SISTEMA DE MENSAJERIA");
+        System.out.println("========================================");
+        System.out.println("Configuración:");
+        System.out.println("  - Clientes: " + cfg.numClientes);
+        System.out.println("  - Mensajes por cliente: " + cfg.mensajesPorCliente);
+        System.out.println("  - Filtros de spam: " + cfg.numFiltros);
+        System.out.println("  - Servidores de entrega: " + cfg.numServidores);
+        System.out.println("  - Capacidad buzón entrada: " + cfg.capacidadBuzonEntrada);
+        System.out.println("  - Capacidad buzón entrega: " + cfg.capacidadBuzonEntrega);
+        System.out.println("========================================\n");
 
         // buzones
         BuzonLimitado buzonEntrada = new BuzonLimitado(cfg.capacidadBuzonEntrada);
@@ -40,7 +50,7 @@ public class Main {
         // crear y arrancar filtros
         List<FiltroSpam> filtros = new ArrayList<>();
         for (int i = 1; i <= cfg.numFiltros; i++) {
-            FiltroSpam f = new FiltroSpam(String.valueOf(i), buzonEntrada, buzonCuarentena, buzonEntrega, cfg.numClientes, coordenador);
+            FiltroSpam f = new FiltroSpam(String.valueOf(i), buzonEntrada, buzonCuarentena, buzonEntrega, cfg.numClientes, cfg.numServidores, coordenador);
             filtros.add(f);
             f.start();
         }
@@ -63,11 +73,11 @@ public class Main {
 
         // esperar a que todos los clientes terminen
         for (ClienteEmisor c : clientes) c.join();
-        System.out.println("Todos los clientes terminaron.");
+        System.out.println("\n[OK] Todos los clientes terminaron de enviar mensajes.");
 
         // esperar a que filtros terminen
         for (FiltroSpam f : filtros) f.join();
-        System.out.println("Todos los filtros terminaron.");
+        System.out.println("[OK] Todos los filtros terminaron de procesar.");
 
         // deposit END en entrega en caso de que no se haya depositado
         // (el coordinador y filtros deberían haberlo hecho, pero por seguridad:)
@@ -83,7 +93,7 @@ public class Main {
 
         // esperar manejador de cuarentena
         manejador.join();
-        System.out.println("Manejador de cuarentena terminó.");
+        System.out.println("[OK] Manejador de cuarentena termino.");
 
         // ahora depositar un END por cada servidor para asegurar que terminan (si no recibieron copia)
         // según enunciado: buzón de entrega debe "copiar" mensaje de END a todos los servidores.
@@ -94,12 +104,18 @@ public class Main {
 
         // esperar servidores
         for (ServidorEntrega s : servidores) s.join();
-        System.out.println("Todos los servidores terminaron.");
+        System.out.println("[OK] Todos los servidores terminaron.");
 
         // chequeo final: todos los buzones vacíos
-        System.out.println("Buzón entrada size: " + buzonEntrada.size());
-        System.out.println("Buzón cuarentena size: " + buzonCuarentena.size());
-        System.out.println("Buzón entrega size: " + buzonEntrega.size());
-        System.out.println("Simulación finalizada correctamente.");
+        System.out.println("\n========================================");
+        System.out.println("  RESUMEN FINAL DEL SISTEMA");
+        System.out.println("========================================");
+        System.out.println("Estado de los buzones:");
+        System.out.println("  - Buzón entrada: " + buzonEntrada.size() + " mensajes");
+        System.out.println("  - Buzón cuarentena: " + buzonCuarentena.size() + " mensajes");
+        System.out.println("  - Buzón entrega: " + buzonEntrega.size() + " mensajes");
+        System.out.println("========================================");
+        System.out.println("[OK] Simulacion finalizada correctamente.");
+        System.out.println("========================================\n");
     }
 }
